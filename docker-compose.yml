@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: verigate-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+
+  app:
+    build: .
+    container_name: verigate-app
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/
+      - MONGO_DB_NAME=verigate
+      - ADMIN_API_KEY=admin_secret_key_123
+      - VENDOR_A_FAILURE_RATE=0.1
+      - VENDOR_A_TIMEOUT_RATE=0.1
+      - VENDOR_MIN_LATENCY_MS=100
+      - VENDOR_MAX_LATENCY_MS=1000
+      - VENDOR_TIMEOUT_BUDGET_MS=500
+      - FLASK_ENV=development
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+volumes:
+  mongo-data:

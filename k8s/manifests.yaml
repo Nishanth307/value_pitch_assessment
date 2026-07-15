@@ -1,0 +1,141 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: verigate
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: verigate-config
+  namespace: verigate
+data:
+  FLASK_ENV: "production"
+  MONGO_DB_NAME: "verigate"
+  VENDOR_A_FAILURE_RATE: "0.1"
+  VENDOR_A_TIMEOUT_RATE: "0.1"
+  VENDOR_MIN_LATENCY_MS: "100"
+  VENDOR_MAX_LATENCY_MS: "1000"
+  VENDOR_TIMEOUT_BUDGET_MS: "500"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: verigate-secrets
+  namespace: verigate
+type: Opaque
+data:
+  # Base64 encoded values. Replace these placeholders with real production secrets
+  # admin_secret_key_123 -> YWRtaW5fc2VjcmV0X2tleV8xMjM=
+  ADMIN_API_KEY: YWRtaW5fc2VjcmV0X2tleV8xMjM=
+  # mongodb://mongo.verigate.svc.cluster.local:27017/ -> bW9uZ29kYjovL21vbmdvLnZlcmlnYXRlLnN2Yy5jbHVzdGVyLmxvY2FsOjI3MDE3Lw==
+  MONGO_URI: bW9uZ29kYjovL21vbmdvLnZlcmlnYXRlLnN2Yy5jbHVzdGVyLmxvY2FsOjI3MDE3Lw==
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: verigate-app
+  namespace: verigate
+  labels:
+    app: verigate-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: verigate-app
+  template:
+    metadata:
+      labels:
+        app: verigate-app
+    spec:
+      containers:
+      - name: verigate-app
+        image: verigate-app:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5000
+        env:
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              name: verigate-secrets
+              key: MONGO_URI
+        - name: ADMIN_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: verigate-secrets
+              key: ADMIN_API_KEY
+        - name: MONGO_DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: verigate-config
+              key: MONGO_DB_NAME
+        - name: VENDOR_A_FAILURE_RATE
+          valueFrom:
+            configMapKeyRef:
+              name: verigate-config
+              key: VENDOR_A_FAILURE_RATE
+        - name: VENDOR_A_TIMEOUT_RATE
+          valueFrom:
+            configMapKeyRef:
+              name: verigate-config
+              key: VENDOR_A_TIMEOUT_RATE
+        - name: VENDOR_MIN_LATENCY_MS
+          valueFrom:
+            configMapKeyRef:
+              name: verigate-config
+              key: VENDOR_MIN_LATENCY_MS
+        - name: VENDOR_MAX_LATENCY_MS
+          valueFrom:
+            configMapKeyRef:
+              name: verigate-config
+              key: VENDOR_MAX_LATENCY_MS
+        - name: VENDOR_TIMEOUT_BUDGET_MS
+          valueFrom:
+            configMapKeyRef:
+              name: verigate-config
+              key: VENDOR_TIMEOUT_BUDGET_MS
+        - name: FLASK_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: verigate-config
+              key: FLASK_ENV
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: verigate-service
+  namespace: verigate
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 5000
+  selector:
+    app: verigate-app
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: verigate-hpa
+  namespace: verigate
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: verigate-app
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 75
