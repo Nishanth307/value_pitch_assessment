@@ -67,6 +67,24 @@ Refer to [curl_examples.md](file:///home/nishanth/projects/assessments/value_pit
 
 ---
 
+## Running with Docker Compose
+
+If you prefer to run the application using Docker, MongoDB and the Flask application can be spun up in isolated containers:
+
+1. **Start the Containers**:
+   ```bash
+   docker compose up -d --build
+   ```
+2. **Retrieve client API keys from container logs**:
+   Since the container seeds itself automatically upon starting, you can view the generated API keys by running:
+   ```bash
+   docker logs verigate-app
+   ```
+3. **Execute requests**:
+   Once the containers are up, the server will be reachable at `http://127.0.0.1:5000/`. You can copy the API keys from the logs to use in your headers.
+
+---
+
 ## Database Index Design
 
 We establish the following indexes on the `api_logs` collection to optimize search speeds:

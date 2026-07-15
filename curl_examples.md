@@ -4,7 +4,9 @@ Refer to the examples below for interacting with VeriGate's endpoints.
 
 Ensure the Flask app is running locally on port 5000 (`flask run`). 
 
-Retrieve client API keys by running `python scripts/seed.py`.
+Retrieve client API keys by running:
+- **Local (bare-metal)**: `PYTHONPATH=. venv/bin/python3 scripts/seed.py`
+- **Docker Compose**: `docker logs verigate-app`
 
 ---
 

@@ -26,4 +26,4 @@ ENV FLASK_RUN_HOST=0.0.0.0
 EXPOSE 5000
 
 # Run the seeding script on startup before starting Flask
-CMD ["sh", "-c", "python3 scripts/seed.py && flask run"]
+CMD ["sh", "-c", "PYTHONPATH=. python3 scripts/seed.py && flask run"]
