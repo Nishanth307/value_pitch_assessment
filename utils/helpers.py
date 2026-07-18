@@ -1,10 +1,10 @@
 from datetime import datetime
 from functools import wraps
 from flask import request, g
-from app.utils.errors import ValidationError
+from utils.errors import ValidationError
 
 def validate_verify_payload(f):
-    """Decorator to validate verification request payloads."""
+    """Decorator to validate verification request JSON payloads."""
     @wraps(f)
     def decorated(*args, **kwargs):
         payload = request.get_json(silent=True)
@@ -28,6 +28,7 @@ def validate_verify_payload(f):
         if not name or not isinstance(name, str) or not name.strip():
             raise ValidationError("Field 'name' is required and must be a non-empty string")
             
+        # Strip fields and store them in Flask global 'g' context for access in route handlers
         g.client_ref_id = client_ref_id.strip()
         g.id_type = id_type
         g.id_number = id_number.strip()
@@ -36,11 +37,12 @@ def validate_verify_payload(f):
         return f(*args, **kwargs)
     return decorated
 
-def parse_iso_date(date_str, field_name):
-    """Parse ISO date parameters safely."""
+def parse_iso_date(date_str: str, field_name: str) -> datetime:
+    """Safely parses an ISO-8601 date string to a datetime object."""
     if not date_str:
         raise ValidationError(f"Query parameter '{field_name}' is required")
     try:
+        # Handles Zulu (Z) timezone notation
         clean_str = date_str.replace("Z", "+00:00")
         return datetime.fromisoformat(clean_str)
     except ValueError:

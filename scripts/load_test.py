@@ -4,7 +4,7 @@ import threading
 import requests
 from datetime import datetime, timezone
 from pymongo import MongoClient
-from app.config import Config
+from config import Config
 
 # Target endpoint
 TARGET_URL = "http://127.0.0.1:5000/api/v1/verify"

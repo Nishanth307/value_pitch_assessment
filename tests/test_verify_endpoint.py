@@ -1,10 +1,9 @@
 import pytest
-from app.extensions import mongo
-from app.services import vendors as vendors_module
+import services.vendor_service as vendors_module
 
 def test_verify_endpoint_success_logging(client, monkeypatch):
     # Mock Vendor A to succeed and skip delay
-    from app.services.vendors import VendorResult
+    from services.vendor_service import VendorResult
     def mock_call_a(id_type, id_number, name):
         return VendorResult(verified=True, name_match_score=99, source="PRIMARY", latency_ms=5)
     monkeypatch.setattr(vendors_module, "call_vendor_a", mock_call_a)
@@ -24,7 +23,7 @@ def test_verify_endpoint_success_logging(client, monkeypatch):
     }
     
     # Clean logs
-    mongo.db.api_logs.delete_many({})
+    client.application.db.api_logs.delete_many({})
     
     res = client.post("/api/v1/verify", headers=headers, json=payload)
     assert res.status_code == 200
@@ -33,7 +32,7 @@ def test_verify_endpoint_success_logging(client, monkeypatch):
     assert data["error_code"] == "VP2000"
     
     # Assert logs contain exactly 1 document
-    logs = list(mongo.db.api_logs.find({}))
+    logs = list(client.application.db.api_logs.find({}))
     assert len(logs) == 1
     log = logs[0]
     

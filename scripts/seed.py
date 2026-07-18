@@ -3,7 +3,7 @@ import random
 import hashlib
 from datetime import datetime, timedelta, timezone
 from pymongo import MongoClient, ASCENDING, DESCENDING
-from app.config import Config
+from config import Config
 
 # Helper functions for generating compliance hashes and masks
 def mask_id_number(id_num: str) -> str:

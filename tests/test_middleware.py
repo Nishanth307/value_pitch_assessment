@@ -1,8 +1,7 @@
 import pytest
-from app.extensions import mongo
-from app.services import vendors as vendors_module
-from app.services.vendors import VendorResult
-from app.services import rate_limiter as tps_limiter
+import services.vendor_service as vendors_module
+from services.vendor_service import VendorResult
+import services.rate_limiter as tps_limiter
 
 @pytest.fixture(autouse=True)
 def mock_vendors_instant(monkeypatch):

@@ -1,8 +1,8 @@
 import pytest
 import time
-from app.services import vendors as orchestrator
-from app.services.vendors import VendorTimeoutError, VendorFailureError, VendorResult
-from app.utils.errors import VendorFailureError as AppVendorFailureError
+import services.vendor_service as orchestrator
+from services.vendor_service import VendorTimeoutError, VendorFailureError, VendorResult
+from utils.errors import VendorFailureError as AppVendorFailureError
 
 @pytest.fixture(autouse=True)
 def reset_circuit_breaker():

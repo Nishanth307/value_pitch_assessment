@@ -1,8 +1,8 @@
 import hashlib
 from functools import wraps
 from flask import request, g
-from app import models
-from app.utils.errors import AuthError, ValidationError, IpNotWhitelistedError
+import models
+from utils.errors import AuthError, ValidationError, IpNotWhitelistedError
 
 def mask_id_number(id_number: str) -> str:
     """Mask all but the last 4 characters of an ID number with asterisks."""
@@ -31,24 +31,25 @@ def hash_value(value: str) -> str:
     return hashlib.sha256(val_bytes).hexdigest()
 
 def get_client_ip() -> str:
-    """Resolve the client's IP address (X-Forwarded-For vs remote_addr)."""
+    """Resolve the client's IP address, checking X-Forwarded-For (for proxies/K8s) first."""
     x_forwarded = request.headers.get("X-Forwarded-For")
     if x_forwarded:
+        # X-Forwarded-For can be a comma-separated list of IPs. The client IP is the first one.
         parts = [ip.strip() for ip in x_forwarded.split(",")]
         if parts:
             return parts[0]
     return request.remote_addr
 
 def require_client_auth(f):
-    """Decorator to enforce API key authentication and User ID presence."""
+    """Decorator to authenticate client API key and check sub-user."""
     @wraps(f)
     def decorated(*args, **kwargs):
         api_key = request.headers.get("X-API-Key")
         if not api_key:
             raise AuthError("Missing X-API-Key header")
             
-        client = models.find_by_api_key(api_key)
-        if not client or client.get("status") != "active":
+        client = models.Client.find_by_api_key(api_key)
+        if not client:
             raise AuthError("Invalid or inactive API key")
             
         g.client = client
@@ -58,12 +59,17 @@ def require_client_auth(f):
         if not user_id:
             raise ValidationError("Missing X-User-Id header")
             
+        # Verify sub-user belongs to this client
+        user = models.ClientUser.find_user(g.client_id, user_id)
+        if not user:
+            raise ValidationError(f"Invalid or inactive sub-user: '{user_id}'")
+            
         g.user_id = user_id
         return f(*args, **kwargs)
     return decorated
 
 def require_ip_whitelist(f):
-    """Decorator to verify that the client IP is whitelisted."""
+    """Decorator to verify the client IP address is whitelisted for the authenticated client."""
     @wraps(f)
     def decorated(*args, **kwargs):
         client_ip = get_client_ip()

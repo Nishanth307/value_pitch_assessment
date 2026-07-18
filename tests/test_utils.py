@@ -1,6 +1,6 @@
 import pytest
-from app.utils.security import mask_id_number, mask_name, hash_value
-from app.utils.errors import (
+from utils.security import mask_id_number, mask_name, hash_value
+from utils.errors import (
     AppError, AuthError, IpNotWhitelistedError,
     ValidationError, TpsLimitError, VendorFailureError
 )

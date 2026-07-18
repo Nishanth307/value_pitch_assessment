@@ -1,12 +1,11 @@
 import pytest
 from datetime import datetime, timezone, timedelta
-from app.extensions import mongo
 
 @pytest.fixture
 def seed_mis_logs(app):
     with app.app_context():
         # Clear logs first
-        mongo.db.api_logs.delete_many({})
+        app.db.api_logs.delete_many({})
         
         # Base date: 2026-07-15
         base_time = datetime(2026, 7, 15, 12, 0, 0, tzinfo=timezone.utc)
@@ -127,9 +126,9 @@ def seed_mis_logs(app):
             }
         ]
         
-        mongo.db.api_logs.insert_many(logs)
+        app.db.api_logs.insert_many(logs)
         yield
-        mongo.db.api_logs.delete_many({})
+        app.db.api_logs.delete_many({})
 
 def test_mis_usage_report(client, seed_mis_logs):
     headers = {"X-Admin-Key": "admin_secret_key_123"}
